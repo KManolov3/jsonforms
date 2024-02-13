@@ -1,0 +1,79 @@
+{
+  "name": "@jsonforms/angular",
+  "version": "3.2.1",
+  "description": "Angular module of JSON Forms",
+  "repository": "https://github.com/eclipsesource/jsonforms",
+  "bugs": "https://github.com/eclipsesource/jsonforms/issues",
+  "homepage": "http://jsonforms.io/",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "directories": {
+    "src": "src",
+    "test": "test"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "keywords": [
+    "angular",
+    "form",
+    "forms",
+    "json",
+    "jsonforms",
+    "frontend",
+    "generator",
+    "input",
+    "renderengine",
+    "jsonschema",
+    "schema",
+    "uischema",
+    "layout",
+    "customization"
+  ],
+  "module": "fesm2022/jsonforms-angular.mjs",
+  "typings": "index.d.ts",
+  "nyc": {
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ]
+  },
+  "ava": {
+    "files": [
+      "test/**/*"
+    ],
+    "compileEnhancements": false,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "./test-config/ts-node.config.js",
+      "source-map-support/register"
+    ]
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@angular/core": "^16.0.0 || ^17.0.0",
+    "@angular/forms": "^16.0.0 || ^17.0.0",
+    "@jsonforms/core": "3.2.1",
+    "rxjs": "^6.6.0 || ^7.4.0"
+  },
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./index.d.ts",
+      "esm2022": "./esm2022/jsonforms-angular.mjs",
+      "esm": "./esm2022/jsonforms-angular.mjs",
+      "default": "./fesm2022/jsonforms-angular.mjs"
+    }
+  },
+  "sideEffects": false
+}

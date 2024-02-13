@@ -1,0 +1,48 @@
+import * as i0 from "@angular/core";
+import * as i1 from "./controls/boolean.renderer";
+import * as i2 from "./controls/textarea.renderer";
+import * as i3 from "./controls/text.renderer";
+import * as i4 from "./controls/number.renderer";
+import * as i5 from "./controls/range.renderer";
+import * as i6 from "./controls/date.renderer";
+import * as i7 from "./controls/toggle.renderer";
+import * as i8 from "./layouts/vertical-layout.renderer";
+import * as i9 from "./layouts/horizontal-layout.renderer";
+import * as i10 from "./layouts/categorization-layout.renderer";
+import * as i11 from "./layouts/group-layout.renderer";
+import * as i12 from "./other/label.renderer";
+import * as i13 from "./other/master-detail/master";
+import * as i14 from "./other/master-detail/detail";
+import * as i15 from "./other/object.renderer";
+import * as i16 from "./controls/autocomplete.renderer";
+import * as i17 from "./other/table.renderer";
+import * as i18 from "./layouts/array-layout.renderer";
+import * as i19 from "./layouts/layout.renderer";
+import * as i20 from "@angular/common";
+import * as i21 from "@jsonforms/angular";
+import * as i22 from "@angular/material/form-field";
+import * as i23 from "@angular/material/checkbox";
+import * as i24 from "@angular/material/input";
+import * as i25 from "@angular/material/slider";
+import * as i26 from "@angular/material/slide-toggle";
+import * as i27 from "@angular/material/core";
+import * as i28 from "@angular/material/datepicker";
+import * as i29 from "@angular/material/tabs";
+import * as i30 from "@angular/material/sidenav";
+import * as i31 from "@angular/material/list";
+import * as i32 from "@angular/forms";
+import * as i33 from "@angular/material/card";
+import * as i34 from "@angular/material/select";
+import * as i35 from "@angular/material/button";
+import * as i36 from "@angular/material/icon";
+import * as i37 from "@angular/material/autocomplete";
+import * as i38 from "@angular/material/table";
+import * as i39 from "@angular/material/toolbar";
+import * as i40 from "@angular/material/tooltip";
+import * as i41 from "@angular/material/badge";
+export declare class JsonFormsAngularMaterialModule {
+    static ɵfac: i0.ɵɵFactoryDeclaration<JsonFormsAngularMaterialModule, never>;
+    static ɵmod: i0.ɵɵNgModuleDeclaration<JsonFormsAngularMaterialModule, [typeof i1.BooleanControlRenderer, typeof i2.TextAreaRenderer, typeof i3.TextControlRenderer, typeof i4.NumberControlRenderer, typeof i5.RangeControlRenderer, typeof i6.DateControlRenderer, typeof i7.ToggleControlRenderer, typeof i8.VerticalLayoutRenderer, typeof i9.HorizontalLayoutRenderer, typeof i10.CategorizationTabLayoutRenderer, typeof i11.GroupLayoutRenderer, typeof i12.LabelRenderer, typeof i13.MasterListComponent, typeof i14.JsonFormsDetailComponent, typeof i15.ObjectControlRenderer, typeof i16.AutocompleteControlRenderer, typeof i17.TableRenderer, typeof i18.ArrayLayoutRenderer, typeof i19.LayoutChildrenRenderPropsPipe], [typeof i20.CommonModule, typeof i21.JsonFormsModule, typeof i22.MatFormFieldModule, typeof i23.MatCheckboxModule, typeof i24.MatInputModule, typeof i25.MatSliderModule, typeof i26.MatSlideToggleModule, typeof i27.MatNativeDateModule, typeof i28.MatDatepickerModule, typeof i29.MatTabsModule, typeof i30.MatSidenavModule, typeof i31.MatListModule, typeof i32.ReactiveFormsModule, typeof i33.MatCardModule, typeof i34.MatSelectModule, typeof i35.MatButtonModule, typeof i36.MatIconModule, typeof i37.MatAutocompleteModule, typeof i38.MatTableModule, typeof i39.MatToolbarModule, typeof i40.MatTooltipModule, typeof i41.MatBadgeModule], [typeof i20.CommonModule, typeof i21.JsonFormsModule, typeof i22.MatFormFieldModule, typeof i23.MatCheckboxModule, typeof i24.MatInputModule, typeof i25.MatSliderModule, typeof i26.MatSlideToggleModule, typeof i27.MatNativeDateModule, typeof i28.MatDatepickerModule, typeof i29.MatTabsModule, typeof i30.MatSidenavModule, typeof i31.MatListModule, typeof i32.ReactiveFormsModule, typeof i33.MatCardModule, typeof i34.MatSelectModule, typeof i35.MatButtonModule, typeof i36.MatIconModule, typeof i37.MatAutocompleteModule]>;
+    static ɵinj: i0.ɵɵInjectorDeclaration<JsonFormsAngularMaterialModule>;
+}
+//# sourceMappingURL=module.d.ts.map
