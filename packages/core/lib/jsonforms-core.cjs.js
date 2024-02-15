@@ -1737,6 +1737,19 @@ var labelDescription = function (text, show) { return ({
     show: show,
 }); };
 
+var dataPathToJsonPointer = function (dataPath) {
+    var parts = dataPath.split('.');
+    var jsonPointer = '#';
+    parts.forEach(function (part) {
+        if (part.match(/^\d+$/)) {
+            jsonPointer += '/items';
+        }
+        else {
+            jsonPointer += "/properties/".concat(part);
+        }
+    });
+    return jsonPointer;
+};
 var checkDataCondition = function (propertyCondition, property, data) {
     if (has__default["default"](propertyCondition, 'const')) {
         return (has__default["default"](data, property) &&
@@ -1805,9 +1818,13 @@ var extractRequired = function (schema, segment, prevSegments) {
     var i = 0;
     var currentSchema = schema;
     while (i < prevSegments.length &&
-        has__default["default"](currentSchema, 'properties') &&
-        has__default["default"](get__default["default"](currentSchema, 'properties'), prevSegments[i])) {
-        currentSchema = get__default["default"](get__default["default"](currentSchema, 'properties'), prevSegments[i]);
+        (has__default["default"](currentSchema, prevSegments[i]) ||
+            (has__default["default"](currentSchema, 'properties') &&
+                has__default["default"](get__default["default"](currentSchema, 'properties'), prevSegments[i])))) {
+        if (has__default["default"](currentSchema, 'properties')) {
+            currentSchema = get__default["default"](currentSchema, 'properties');
+        }
+        currentSchema = get__default["default"](currentSchema, prevSegments[i]);
         ++i;
     }
     if (i < prevSegments.length) {
@@ -1850,43 +1867,59 @@ var conditionallyRequired = function (schema, segment, prevSegments, data) {
             conditionallyRequired(subschema, segment, prevSegments, data));
     }, nestedAllOfSchema);
 };
-var isRequiredInParent = function (schema, rootSchema, path, segment, prevSegments, data) {
-    var pathSegments = path.split('/');
-    var lastSegment = pathSegments[pathSegments.length - 3];
-    var nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - 4);
-    if (!nextHigherSchemaSegments.length) {
+var getNextHigherSchemaPath = function (schemaPath) {
+    var pathSegments = schemaPath.split('/');
+    var lastSegment = pathSegments[pathSegments.length - 1];
+    var nextHigherSegmentIndexDifference = lastSegment === 'items' ? 1 : 2;
+    var nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - nextHigherSegmentIndexDifference);
+    return nextHigherSchemaSegments.join('/');
+};
+var getNextHigherDataPath = function (dataPath) {
+    var dataPathSegments = dataPath.split('.');
+    return dataPathSegments.slice(0, dataPathSegments.length - 1).join('.');
+};
+var isRequiredInParent = function (schema, schemaPath, segment, prevSegments, data, dataPath) {
+    var pathSegments = schemaPath.split('/');
+    var lastSegment = pathSegments[pathSegments.length - 1];
+    var nextHigherSchemaPath = getNextHigherSchemaPath(schemaPath);
+    if (!nextHigherSchemaPath) {
         return false;
     }
-    var nextHigherSchemaPath = nextHigherSchemaSegments.join('/');
-    var nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, rootSchema);
-    var currentData = Resolve.data(data, toDataPath(nextHigherSchemaPath));
+    var nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, schema);
+    var nextHigherDataPath = getNextHigherDataPath(dataPath);
+    var currentData = Resolve.data(data, nextHigherDataPath);
     return (conditionallyRequired(nextHigherSchema, segment, __spreadArray([lastSegment], prevSegments, true), currentData) ||
         (has__default["default"](nextHigherSchema, 'if') &&
             checkRequiredInIf(nextHigherSchema, segment, __spreadArray([lastSegment], prevSegments, true), currentData)) ||
-        isRequiredInParent(schema, rootSchema, nextHigherSchemaPath, segment, __spreadArray([lastSegment], prevSegments, true), currentData));
+        isRequiredInParent(schema, nextHigherSchemaPath, segment, __spreadArray([lastSegment], prevSegments, true),
+        data, nextHigherDataPath));
 };
-var isRequired = function (schema, schemaPath, rootSchema, data, config) {
+var isRequiredInSchema = function (schema, segment) {
+    return (schema !== undefined &&
+        schema.required !== undefined &&
+        schema.required.indexOf(segment) !== -1);
+};
+var isRequired = function (schema, schemaPath, rootSchema) {
     var pathSegments = schemaPath.split('/');
     var lastSegment = pathSegments[pathSegments.length - 1];
     var nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - 2);
     var nextHigherSchemaPath = nextHigherSchemaSegments.join('/');
     var nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, rootSchema);
-    var currentData = Resolve.data(data, toDataPath(nextHigherSchemaPath));
-    if (!(config === null || config === void 0 ? void 0 : config.allowDynamicCheck)) {
-        return (nextHigherSchema !== undefined &&
-            nextHigherSchema.required !== undefined &&
-            nextHigherSchema.required.indexOf(lastSegment) !== -1);
-    }
+    return isRequiredInSchema(nextHigherSchema, lastSegment);
+};
+var isConditionallyRequired = function (rootSchema, schemaPath, data, dataPath) {
+    var pathSegments = schemaPath.split('/');
+    var lastSegment = pathSegments[pathSegments.length - 1];
+    var nextHigherSchemaPath = getNextHigherSchemaPath(schemaPath);
+    var nextHigherSchema = Resolve.schema(rootSchema, nextHigherSchemaPath, rootSchema);
+    var nextHigherDataPath = getNextHigherDataPath(dataPath);
+    var currentData = Resolve.data(data, nextHigherDataPath);
     var requiredInIf = has__default["default"](nextHigherSchema, 'if') &&
         checkRequiredInIf(nextHigherSchema, lastSegment, [], currentData);
     var requiredConditionally = conditionallyRequired(nextHigherSchema, lastSegment, [], currentData);
-    var requiredConditionallyInParent = isRequiredInParent(rootSchema, rootSchema, schemaPath, lastSegment, [], data);
-    return ((nextHigherSchema !== undefined &&
-        nextHigherSchema.required !== undefined &&
-        nextHigherSchema.required.indexOf(lastSegment) !== -1) ||
-        requiredInIf ||
-        requiredConditionally ||
-        requiredConditionallyInParent);
+    var requiredConditionallyInParent = isRequiredInParent(rootSchema,
+    nextHigherSchemaPath, lastSegment, [], data, nextHigherDataPath);
+    return requiredInIf || requiredConditionally || requiredConditionallyInParent;
 };
 var computeLabel = function (label, required, hideRequiredAsterisk) {
     return "".concat(label !== null && label !== void 0 ? label : '').concat(required && !hideRequiredAsterisk ? '*' : '');
@@ -1991,7 +2024,9 @@ var mapStateToControlProps = function (state, ownProps) {
     var rootSchema = getSchema(state);
     var config = getConfig(state);
     var required = controlElement.scope !== undefined &&
-        isRequired(ownProps.schema, controlElement.scope, rootSchema, rootData, config);
+        !!(isRequired(ownProps.schema, controlElement.scope, rootSchema) ||
+            ((config === null || config === void 0 ? void 0 : config.allowDynamicCheck) &&
+                isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path)));
     var resolvedSchema = Resolve.schema(ownProps.schema || rootSchema, controlElement.scope, rootSchema);
     var errors = getErrorAt(path, resolvedSchema)(state);
     var description = resolvedSchema !== undefined ? resolvedSchema.description : '';
