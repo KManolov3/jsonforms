@@ -2025,8 +2025,7 @@ var mapStateToControlProps = function (state, ownProps) {
     var config = getConfig(state);
     var required = controlElement.scope !== undefined &&
         !!(isRequired(ownProps.schema, controlElement.scope, rootSchema) ||
-            ((config === null || config === void 0 ? void 0 : config.allowDynamicCheck) &&
-                isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path)));
+            isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path));
     var resolvedSchema = Resolve.schema(ownProps.schema || rootSchema, controlElement.scope, rootSchema);
     var errors = getErrorAt(path, resolvedSchema)(state);
     var description = resolvedSchema !== undefined ? resolvedSchema.description : '';

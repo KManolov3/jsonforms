@@ -1832,8 +1832,7 @@ const mapStateToControlProps = (state, ownProps) => {
     const config = getConfig(state);
     const required = controlElement.scope !== undefined &&
         !!(isRequired(ownProps.schema, controlElement.scope, rootSchema) ||
-            (config?.allowDynamicCheck &&
-                isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path)));
+            isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path));
     const resolvedSchema = Resolve.schema(ownProps.schema || rootSchema, controlElement.scope, rootSchema);
     const errors = getErrorAt(path, resolvedSchema)(state);
     const description = resolvedSchema !== undefined ? resolvedSchema.description : '';

@@ -878,13 +878,15 @@ export const mapStateToControlProps = (
     controlElement.scope !== undefined &&
     !!(
       isRequired(ownProps.schema, controlElement.scope, rootSchema) ||
-      (config?.allowDynamicCheck &&
-        isConditionallyRequired(
-          rootSchema,
-          dataPathToJsonPointer(path),
-          rootData,
-          path
-        ))
+      // IMPORTANT: The config.allowDynamicCheck condition was removed here,
+      // because this makes it more convenient to use in the author's specific
+      // usecase. Do not commit this to the json-forms origin repo.
+      isConditionallyRequired(
+        rootSchema,
+        dataPathToJsonPointer(path),
+        rootData,
+        path
+      )
     );
   const resolvedSchema = Resolve.schema(
     ownProps.schema || rootSchema,
