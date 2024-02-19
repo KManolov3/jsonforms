@@ -1582,7 +1582,7 @@ const checkPropertyCondition = (propertiesCondition, property, data) => {
     if (has(propertiesCondition[property], 'not')) {
         return !checkDataCondition(get(propertiesCondition[property], 'not'), property, data);
     }
-    if (has(propertiesCondition[property], 'properties')) {
+    if (has(propertiesCondition[property], 'properties') && has(data, property)) {
         const nextPropertyConditions = get(propertiesCondition[property], 'properties');
         return all((prop) => checkPropertyCondition(nextPropertyConditions, prop, data[property]), Object.keys(nextPropertyConditions));
     }

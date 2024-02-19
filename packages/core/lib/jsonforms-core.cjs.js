@@ -1773,7 +1773,7 @@ var checkPropertyCondition = function (propertiesCondition, property, data) {
     if (has__default["default"](propertiesCondition[property], 'not')) {
         return !checkDataCondition(get__default["default"](propertiesCondition[property], 'not'), property, data);
     }
-    if (has__default["default"](propertiesCondition[property], 'properties')) {
+    if (has__default["default"](propertiesCondition[property], 'properties') && has__default["default"](data, property)) {
         var nextPropertyConditions_1 = get__default["default"](propertiesCondition[property], 'properties');
         return all__default["default"](function (prop) {
             return checkPropertyCondition(nextPropertyConditions_1, prop, data[property]);
