@@ -446,52 +446,6 @@ test('mapStateToControlProps - id', (t) => {
   t.is(props.id, '#/properties/firstName');
 });
 
-test('mapStateToControlProps - required not checked dynamically if not explicitly specified in config', (t) => {
-  const schema = {
-    type: 'object',
-    properties: {
-      notifications: { type: 'boolean' },
-      firstName: { type: 'string' },
-    },
-    required: ['notifications'],
-    if: {
-      properties: {
-        notifications: { const: true },
-      },
-    },
-    then: {
-      required: ['firstName'],
-    },
-  };
-
-  const ownProps: OwnPropsOfControl = {
-    uischema: coreUISchema,
-    schema,
-  };
-
-  const createState = (data: {
-    notifications: boolean;
-    firstName: string;
-  }) => ({
-    jsonforms: {
-      core: {
-        schema,
-        uischema: coreUISchema,
-        data,
-        errors: [] as ErrorObject[],
-      },
-    },
-  });
-
-  const stateTrue = createState({ notifications: true, firstName: 'Bart' });
-  const stateFalse = createState({ notifications: false, firstName: 'Bart' });
-
-  const propsTrue = mapStateToControlProps(stateTrue, ownProps);
-  const propsFalse = mapStateToControlProps(stateFalse, ownProps);
-  t.false(propsTrue.required);
-  t.false(propsFalse.required);
-});
-
 test('mapStateToControlProps - required with dynamic check based on single condition', (t) => {
   const schema = {
     type: 'object',

@@ -1548,6 +1548,19 @@ const labelDescription = (text, show) => ({
     show: show,
 });
 
+const dataPathToJsonPointer = (dataPath) => {
+    const parts = dataPath.split('.');
+    let jsonPointer = '#';
+    parts.forEach((part) => {
+        if (part.match(/^\d+$/)) {
+            jsonPointer += '/items';
+        }
+        else {
+            jsonPointer += `/properties/${part}`;
+        }
+    });
+    return jsonPointer;
+};
 const checkDataCondition = (propertyCondition, property, data) => {
     if (has(propertyCondition, 'const')) {
         return (has(data, property) &&
@@ -1569,7 +1582,7 @@ const checkPropertyCondition = (propertiesCondition, property, data) => {
     if (has(propertiesCondition[property], 'not')) {
         return !checkDataCondition(get(propertiesCondition[property], 'not'), property, data);
     }
-    if (has(propertiesCondition[property], 'properties')) {
+    if (has(propertiesCondition[property], 'properties') && has(data, property)) {
         const nextPropertyConditions = get(propertiesCondition[property], 'properties');
         return all((prop) => checkPropertyCondition(nextPropertyConditions, prop, data[property]), Object.keys(nextPropertyConditions));
     }
@@ -1612,9 +1625,13 @@ const extractRequired = (schema, segment, prevSegments) => {
     let i = 0;
     let currentSchema = schema;
     while (i < prevSegments.length &&
-        has(currentSchema, 'properties') &&
-        has(get(currentSchema, 'properties'), prevSegments[i])) {
-        currentSchema = get(get(currentSchema, 'properties'), prevSegments[i]);
+        (has(currentSchema, prevSegments[i]) ||
+            (has(currentSchema, 'properties') &&
+                has(get(currentSchema, 'properties'), prevSegments[i])))) {
+        if (has(currentSchema, 'properties')) {
+            currentSchema = get(currentSchema, 'properties');
+        }
+        currentSchema = get(currentSchema, prevSegments[i]);
         ++i;
     }
     if (i < prevSegments.length) {
@@ -1657,43 +1674,59 @@ const conditionallyRequired = (schema, segment, prevSegments, data) => {
             conditionallyRequired(subschema, segment, prevSegments, data));
     }, nestedAllOfSchema);
 };
-const isRequiredInParent = (schema, rootSchema, path, segment, prevSegments, data) => {
-    const pathSegments = path.split('/');
-    const lastSegment = pathSegments[pathSegments.length - 3];
-    const nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - 4);
-    if (!nextHigherSchemaSegments.length) {
+const getNextHigherSchemaPath = (schemaPath) => {
+    const pathSegments = schemaPath.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    const nextHigherSegmentIndexDifference = lastSegment === 'items' ? 1 : 2;
+    const nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - nextHigherSegmentIndexDifference);
+    return nextHigherSchemaSegments.join('/');
+};
+const getNextHigherDataPath = (dataPath) => {
+    const dataPathSegments = dataPath.split('.');
+    return dataPathSegments.slice(0, dataPathSegments.length - 1).join('.');
+};
+const isRequiredInParent = (schema, schemaPath, segment, prevSegments, data, dataPath) => {
+    const pathSegments = schemaPath.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    const nextHigherSchemaPath = getNextHigherSchemaPath(schemaPath);
+    if (!nextHigherSchemaPath) {
         return false;
     }
-    const nextHigherSchemaPath = nextHigherSchemaSegments.join('/');
-    const nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, rootSchema);
-    const currentData = Resolve.data(data, toDataPath(nextHigherSchemaPath));
+    const nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, schema);
+    const nextHigherDataPath = getNextHigherDataPath(dataPath);
+    const currentData = Resolve.data(data, nextHigherDataPath);
     return (conditionallyRequired(nextHigherSchema, segment, [lastSegment, ...prevSegments], currentData) ||
         (has(nextHigherSchema, 'if') &&
             checkRequiredInIf(nextHigherSchema, segment, [lastSegment, ...prevSegments], currentData)) ||
-        isRequiredInParent(schema, rootSchema, nextHigherSchemaPath, segment, [lastSegment, ...prevSegments], currentData));
+        isRequiredInParent(schema, nextHigherSchemaPath, segment, [lastSegment, ...prevSegments],
+        data, nextHigherDataPath));
 };
-const isRequired = (schema, schemaPath, rootSchema, data, config) => {
+const isRequiredInSchema = (schema, segment) => {
+    return (schema !== undefined &&
+        schema.required !== undefined &&
+        schema.required.indexOf(segment) !== -1);
+};
+const isRequired = (schema, schemaPath, rootSchema) => {
     const pathSegments = schemaPath.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
     const nextHigherSchemaSegments = pathSegments.slice(0, pathSegments.length - 2);
     const nextHigherSchemaPath = nextHigherSchemaSegments.join('/');
     const nextHigherSchema = Resolve.schema(schema, nextHigherSchemaPath, rootSchema);
-    const currentData = Resolve.data(data, toDataPath(nextHigherSchemaPath));
-    if (!config?.allowDynamicCheck) {
-        return (nextHigherSchema !== undefined &&
-            nextHigherSchema.required !== undefined &&
-            nextHigherSchema.required.indexOf(lastSegment) !== -1);
-    }
+    return isRequiredInSchema(nextHigherSchema, lastSegment);
+};
+const isConditionallyRequired = (rootSchema, schemaPath, data, dataPath) => {
+    const pathSegments = schemaPath.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    const nextHigherSchemaPath = getNextHigherSchemaPath(schemaPath);
+    const nextHigherSchema = Resolve.schema(rootSchema, nextHigherSchemaPath, rootSchema);
+    const nextHigherDataPath = getNextHigherDataPath(dataPath);
+    const currentData = Resolve.data(data, nextHigherDataPath);
     const requiredInIf = has(nextHigherSchema, 'if') &&
         checkRequiredInIf(nextHigherSchema, lastSegment, [], currentData);
     const requiredConditionally = conditionallyRequired(nextHigherSchema, lastSegment, [], currentData);
-    const requiredConditionallyInParent = isRequiredInParent(rootSchema, rootSchema, schemaPath, lastSegment, [], data);
-    return ((nextHigherSchema !== undefined &&
-        nextHigherSchema.required !== undefined &&
-        nextHigherSchema.required.indexOf(lastSegment) !== -1) ||
-        requiredInIf ||
-        requiredConditionally ||
-        requiredConditionallyInParent);
+    const requiredConditionallyInParent = isRequiredInParent(rootSchema,
+    nextHigherSchemaPath, lastSegment, [], data, nextHigherDataPath);
+    return requiredInIf || requiredConditionally || requiredConditionallyInParent;
 };
 const computeLabel = (label, required, hideRequiredAsterisk) => {
     return `${label ?? ''}${required && !hideRequiredAsterisk ? '*' : ''}`;
@@ -1798,7 +1831,8 @@ const mapStateToControlProps = (state, ownProps) => {
     const rootSchema = getSchema(state);
     const config = getConfig(state);
     const required = controlElement.scope !== undefined &&
-        isRequired(ownProps.schema, controlElement.scope, rootSchema, rootData, config);
+        !!(isRequired(ownProps.schema, controlElement.scope, rootSchema) ||
+            isConditionallyRequired(rootSchema, dataPathToJsonPointer(path), rootData, path));
     const resolvedSchema = Resolve.schema(ownProps.schema || rootSchema, controlElement.scope, rootSchema);
     const errors = getErrorAt(path, resolvedSchema)(state);
     const description = resolvedSchema !== undefined ? resolvedSchema.description : '';
